@@ -3,20 +3,31 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
 
 	_ "github.com/lib/pq"
 )
 
+const (
+	host   = "localhost"
+	port   = 5432
+	user   = "postgres"
+	dbname = "touchsource"
+)
+
 func main() {
-	connStr := "user=millmer dbname=touchsource sslmode=verify-full"
-	db, err := sql.Open("postgres", connStr)
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+		"dbname=%s sslmode=disable",
+		host, port, user, dbname)
+	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		panic(err)
 	}
 
-	// first := "Donnell"
-	// last := "Abrahamson"
-	rows, err := db.Query("SELECT * FROM People;")
-	fmt.Println(rows)
+	fmt.Println("Successfully connected!")
 }
