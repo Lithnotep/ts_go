@@ -2,7 +2,10 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
 
 	_ "github.com/lib/pq"
 )
@@ -14,25 +17,24 @@ const (
 	dbname = "touchsource"
 )
 
-// func main() {
-// 	port := 8080
-
-// 	http.HandleFunc("/person", personHandler)
-// 	http.HandleFunc("/people", peopleHandler)
-
-// 	log.Printf("Server starting on port %v\n", 8080)
-// 	log.Printf(dbConn, 8080)
-
-// 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", port), nil))
-// }
-
 func main() {
+	port := 8080
+
+	http.HandleFunc("/person", personHandler)
+	http.HandleFunc("/people", peopleHandler)
+
+	log.Printf("Server starting on port %v\n", 8080)
+
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", port), nil))
+}
+
+func dbConn(q string) {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"dbname=%s sslmode=disable",
 		host, port, user, dbname)
 	db, err := sql.Open("postgres", psqlInfo)
 
-	people, err := db.Query("SELECT * FROM People;")
+	people, err := db.Query("SELECT * FROM People ORDER BY last ASC, first ASC;")
 
 	err = db.Ping()
 	if err != nil {
@@ -57,24 +59,24 @@ type response struct {
 	Message string `json:"message"`
 }
 
-// func personHandler(w http.ResponseWriter, r *http.Request) {
-// 	response := response{Message: "Max's API"}
-// 	data, err := json.Marshal(response)
-// 	if err != nil {
-// 		panic("oops")
-// 	}
+func personHandler(w http.ResponseWriter, r *http.Request) {
+	response := response{Message: "Max's API"}
+	data, err := json.Marshal(response)
+	if err != nil {
+		panic("oops")
+	}
 
-// 	fmt.Fprint(w, string(data))
-// }
+	fmt.Fprint(w, string(data))
+}
 
-// func peopleHandler(w http.ResponseWriter, r *http.Request) {
+func peopleHandler(w http.ResponseWriter, r *http.Request) {
 
-// 	// response := response{Message: "high"}
-// 	// data, err := json.Marshal(response)
-// 	// if err != nil {
-// 	// 	panic("oops")
-// 	// }
+	response := response{Message: "high"}
+	data, err := json.Marshal(response)
+	if err != nil {
+		panic("oops")
+	}
 
-// 	fmt.Fprint(w, dbConn)
+	fmt.Fprint(w, string(data))
 
-// }
+}
