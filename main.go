@@ -86,7 +86,6 @@ func peopleHandler(w http.ResponseWriter, r *http.Request) {
 	for people.Next() {
 		err = people.Scan(&arr[0], &arr[1])
 		if err != nil {
-			// handle this error
 			panic(err)
 		}
 		list = append(list, arr)
