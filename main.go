@@ -45,31 +45,29 @@ func dbConn(q string, w http.ResponseWriter) {
 	}
 	defer people.Close()
 
-	// var list []*peopleList
 	var arr [2]string
+	var list [][2]string
 	for people.Next() {
-		// p := new(peopleList)
 		err = people.Scan(&arr[0], &arr[1])
 		if err != nil {
 			// handle this error
 			panic(err)
 		}
-		// list = append(list, p)
+		list = append(list, arr)
 	}
 	if err := people.Err(); err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	data, err := json.Marshal(arr)
-	fmt.Fprint(w, string(data))
+	data, err := json.Marshal(list)
+	fmt.Fprint(w, string(data)
 	return
 
 }
 
 // type peopleList struct {
-// 	First string `json:"first"`
-// 	Last  string `json:"last"`
+// 	Person
 // }
 
 func personHandler(w http.ResponseWriter, r *http.Request) {
