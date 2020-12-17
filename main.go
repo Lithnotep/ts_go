@@ -17,19 +17,6 @@ const (
 	dbname = "touchsource"
 )
 
-var db *sql.DB
-
-func init() {
-	var err error
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
-		"dbname=%s sslmode=disable",
-		host, port, user, dbname)
-	db, err := sql.Open("postgres", psqlInfo)
-	if err != nil {
-		panic(err)
-	}
-}
-
 func main() {
 	port := 8080
 
@@ -42,6 +29,15 @@ func main() {
 }
 
 func dbConn(q string, w http.ResponseWriter) {
+	var err error
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+		"dbname=%s sslmode=disable",
+		host, port, user, dbname)
+	db, err := sql.Open("postgres", psqlInfo)
+	if err != nil {
+		panic(err)
+	}
+
 	people, err := db.Query(q)
 	if err != nil {
 		fmt.Println(err)
@@ -49,44 +45,37 @@ func dbConn(q string, w http.ResponseWriter) {
 	}
 	defer people.Close()
 
-	var list []*peopleList
+	// var list []*peopleList
+	var arr [2]string
 	for people.Next() {
-		p := new(peopleList)
-		err = people.Scan(&p.ID, &p.First, &p.Last)
+		// p := new(peopleList)
+		err = people.Scan(&arr[0], &arr[1])
 		if err != nil {
 			// handle this error
 			panic(err)
 		}
-		list = append(list, p)
+		// list = append(list, p)
 	}
 	if err := people.Err(); err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(list); err != nil {
-		fmt.Println(err)
-	}
+	data, err := json.Marshal(arr)
+	fmt.Fprint(w, string(data))
 	return
 
 }
 
-type peopleList struct {
-	First string `json:"first"`
-	Last  string `json:"last"`
-	ID    int64  `json:"id"`
-}
-
-type person struct {
-	First string `json:"first"`
-	Last  string `json:"last"`
-	ID    int64  `json:"id"`
-}
+// type peopleList struct {
+// 	First string `json:"first"`
+// 	Last  string `json:"last"`
+// }
 
 func personHandler(w http.ResponseWriter, r *http.Request) {
-	dbConn("SELECT * FROM People ORDER BY last ASC, first ASC;", w)
+	dbConn("SELECT first, last FROM People ORDER BY last ASC, first ASC;", w)
 }
 
 func peopleHandler(w http.ResponseWriter, r *http.Request) {
-	dbConn("SELECT * FROM People ORDER BY last ASC, first ASC;", w)
+	dbConn("SELECT first, last FROM People ORDER BY last ASC, first ASC;", w)
 }
