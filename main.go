@@ -17,6 +17,19 @@ const (
 	dbname = "touchsource"
 )
 
+var db *sql.DB
+
+func init() {
+	var err error
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+		"dbname=%s sslmode=disable",
+		host, port, user, dbname)
+	db, err := sql.Open("postgres", psqlInfo)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func main() {
 	port := 8080
 
@@ -28,55 +41,52 @@ func main() {
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", port), nil))
 }
 
-func dbConn(q string) {
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
-		"dbname=%s sslmode=disable",
-		host, port, user, dbname)
-	db, err := sql.Open("postgres", psqlInfo)
-
-	people, err := db.Query("SELECT * FROM People ORDER BY last ASC, first ASC;")
-
-	err = db.Ping()
+func dbConn(q string, w http.ResponseWriter) {
+	people, err := db.Query(q)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		return
 	}
+	defer people.Close()
 
-	db.Close()
+	var list []*peopleList
 	for people.Next() {
-		var first string
-		var last string
-		var id int64
-		err = people.Scan(&id, &first, &last)
+		p := new(peopleList)
+		err = people.Scan(&p.ID, &p.First, &p.Last)
 		if err != nil {
 			// handle this error
 			panic(err)
 		}
-		fmt.Println(last, first)
+		list = append(list, p)
 	}
+	if err := people.Err(); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(list); err != nil {
+		fmt.Println(err)
+	}
+	return
+
 }
 
-type response struct {
-	Message string `json:"message"`
+type peopleList struct {
+	First string `json:"first"`
+	Last  string `json:"last"`
+	ID    int64  `json:"id"`
+}
+
+type person struct {
+	First string `json:"first"`
+	Last  string `json:"last"`
+	ID    int64  `json:"id"`
 }
 
 func personHandler(w http.ResponseWriter, r *http.Request) {
-	response := response{Message: "Max's API"}
-	data, err := json.Marshal(response)
-	if err != nil {
-		panic("oops")
-	}
-
-	fmt.Fprint(w, string(data))
+	dbConn("SELECT * FROM People ORDER BY last ASC, first ASC;", w)
 }
 
 func peopleHandler(w http.ResponseWriter, r *http.Request) {
-
-	response := response{Message: "high"}
-	data, err := json.Marshal(response)
-	if err != nil {
-		panic("oops")
-	}
-
-	fmt.Fprint(w, string(data))
-
+	dbConn("SELECT * FROM People ORDER BY last ASC, first ASC;", w)
 }
